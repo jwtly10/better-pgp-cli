@@ -25,7 +25,7 @@ const options = program.opts()
 
 async function generateMonthlyReport(
     filePath: string,
-    keyPath: string,
+    key: string,
     password: string
 ) {
     // Iterate through path to find pgp files to process.
@@ -40,20 +40,17 @@ async function generateMonthlyReport(
             return
         }
 
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i]
+        files.forEach(async (file) => {
             const fileExtension = path.extname(file)
             if (fileExtension !== '.pgp') {
                 console.log('File extension is not .pgp, skipping file: ', file)
-                continue
+            } else {
+                console.log('Processing file: ', file)
+                // Decrypt file
+                // Write decrypted file to XLSX
+                await processFile(file, key, password)
             }
-            console.log('Processing file: ', file)
-            // Decrypt file
-            await pgp.decryptFile(file, keyPath, password)
-            // what is the type of this file
-
-            // Write decrypted file to XLSX
-        }
+        })
     } catch (err) {
         console.log('Error: ', err)
     }
@@ -64,6 +61,25 @@ async function generateMonthlyReport(
     // 2. Write the decrypted files to individual sheets in workbook
 }
 
+async function processFile(file: string, key: string, password: string) {
+    const decryptedFile = await pgp.decryptFile(file, key, password)
+    // Write this decrypted file to csv
+    if (convertToCSV(decryptedFile, file)) {
+        console.log('Successfully converted decrypted file ', file, ' to CSV')
+    }
+}
+
+function convertToCSV(decryptedFile: string, file: string): boolean {
+    // get the first item of the decrypted file, comma separated
+    const filename = decryptedFile.split(',')[0]
+    try {
+        const writableStream = fs.createWriteStream(filename + '.csv')
+        return writableStream.write(decryptedFile)
+    } catch (err) {
+        console.log('Error converting decrypted file to CSV: ', err)
+        return false
+    }
+}
 // async function testFlow(filePath: string) {
 //     fs.createReadStream(filePath)
 //         .pipe(parse({ delimiter: ',', from_line: 1 }))
