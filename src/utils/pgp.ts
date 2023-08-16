@@ -1,12 +1,12 @@
 import * as openpgp from 'openpgp'
 import fs from 'fs'
 
-async function decryptFile(
+export default async function decryptFile(
     file: string,
     filePath: string,
     keyPath: string,
     password: string
-) {
+): Promise<string> {
     try {
         const encryptedFile = fs.readFileSync(filePath + file)
         const privkey = fs.readFileSync(keyPath)
@@ -20,8 +20,6 @@ async function decryptFile(
         return decrypted
     } catch (err) {
         console.log('Error: ', err)
-        return
+        return 'Error'
     }
 }
-
-export default { decryptFile }

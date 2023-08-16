@@ -4,7 +4,7 @@ import figlet from 'figlet'
 import fs from 'fs'
 import path from 'path'
 import promptly from 'promptly'
-import pgp from './utils/pgp'
+import decryptFile from './utils/pgp'
 import csv from './utils/csv'
 
 const program = new Command()
@@ -24,10 +24,8 @@ program
     .option('-m, --mode <mode>', "Available Modes: 'mr' - (Monthly Reporting)")
     .option('-d, --dir <directory>', 'Path to directory containing files')
     .option('-k, --key <path/key>', 'Path to private key')
-    .option(
-        '-o, --output <directory>',
-        'Path to output directory, default is -d directory'
-    )
+    .option('-o, --output <path>', 'Path to output directory')
+
     .parse(process.argv)
 
 const options = program.opts()
@@ -38,95 +36,47 @@ async function generateMonthlyReport(
     password: string,
     outputDir: string = filePath
 ) {
-    console.log("Parsing directory: '", filePath, "'")
+    console.log("Parsing directory: '", filePath, "'\n")
 
-    const files: string[] = await fs.promises.readdir(filePath)
+    var files = await fs.promises.readdir(filePath)
     try {
         if (files.length === 0) {
             console.log('No files found in path: ', filePath)
-            return
         } else if (files.length > 20) {
             console.log('Too many files found in path (max 20): ', filePath)
-            return
         }
 
         var processedFiles: number = 0
-        files.forEach(async (file) => {
+
+        for (const file of files) {
             const fileExtension = path.extname(file)
             if (fileExtension !== '.pgp') {
                 console.log('File extension is not .pgp, skipping file: ', file)
-            } else {
-                console.log('Processing file: ', file)
-                processedFiles++
-                await processFile(file, filePath, keyPath, password, outputDir)
+                continue
             }
-        })
+
+            console.log('Processing file: ', file)
+            processedFiles++
+            const decrypted = await decryptFile(
+                file,
+                filePath,
+                keyPath,
+                password
+            )
+
+            csv.writeToCSV(decrypted, file, outputDir)
+        }
+
+        await fs.promises.readdir(filePath)
+        files = fs.readdirSync(filePath)
         console.log('Processed ', processedFiles, ' file(s). \n')
+        csv.generateXLSX(filePath, files, outputDir)
+        console.log('\nXLSX File generated')
     } catch (err) {
         console.log('Error: ', err)
     }
-
-    try {
-        const wb = new xl.Workbook()
-        files.forEach(async (file) => {
-            const fileExtension = path.extname(file)
-            if (fileExtension == '.csv') {
-                console.log('Writing file: ', file)
-                csv.writeToXLSX(filePath + file, outputDir, wb)
-            } else {
-            }
-        })
-    } catch (err) {
-        console.log('Error: ', err)
-        return
-    }
+    return
 }
-
-async function processFile(
-    file: string,
-    filePath: string,
-    keyPath: string,
-    password: string,
-    outputDir: string
-) {
-    const decryptedFile = await pgp.decryptFile(
-        file,
-        filePath,
-        keyPath,
-        password
-    )
-    // Write this decrypted file to csv
-    csv.writeToCSV(decryptedFile, file, outputDir)
-}
-
-// async function testFlow(filePath: string) {
-//     fs.createReadStream(filePath)
-//         .pipe(parse({ delimiter: ',', from_line: 1 }))
-//         .on('data', function (row) {
-//             data.push(row)
-//         })
-//         .on('error', function (error) {
-//             console.log(error.message)
-//         })
-//         .on('end', function () {
-//             console.log('finished')
-//             console.log(data)
-//             // create excel file and add data to multiple worksheets
-//             var wb = new xl.Workbook()
-//             // this will be the name of the sql
-//             var ws = wb.addWorksheet('Example sheet 1')
-
-//             console.log('Data length: ', data.length)
-
-//             for (let x = 0; x < data.length; x++) {
-//                 for (let y = 0; y < data[x].length; y++) {
-//                     ws.cell(x + 1, y + 1).string(data[x][y])
-//                 }
-//             }
-
-//             wb.write('result.xlsx')
-//         })
-// }
 
 // Handle arguments
 if (process.argv.length === 0) {
@@ -145,7 +95,12 @@ if (options.mode === 'mr' && options.dir && options.key) {
         const password = await promptly.password('Passphrase for key: ', {
             replace: '*',
         })
-        await generateMonthlyReport(options.dir, options.key, password)
+        await generateMonthlyReport(
+            options.dir,
+            options.key,
+            password,
+            options.output
+        )
     })()
 } else {
     console.log('Invalid arguments provided.')

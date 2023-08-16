@@ -1,4 +1,5 @@
 import fs from 'fs'
+import path from 'path'
 const xl = require('excel4node')
 import { parse } from 'csv-parse'
 
@@ -6,28 +7,31 @@ function writeToCSV(
     decryptedFile: string,
     file: string,
     outputDir: string
-): boolean {
-    // get the first item of the decrypted file, comma separated
+): string {
     const filename = decryptedFile.split(',')[0]
     try {
         const writableStream = fs.createWriteStream(
             outputDir + filename + '.csv'
         )
-        console.log(
-            'Successfully converted decrypted file ',
-            file,
-            ' to ',
-            filename + '.csv'
-        )
-        return writableStream.write(decryptedFile)
+        if (writableStream.write(decryptedFile)) {
+            console.log(
+                'Successfully converted decrypted file ',
+                file,
+                ' to ',
+                filename + '.csv'
+            )
+            return filename + '.csv'
+        }
+
+        return ''
     } catch (err) {
         console.log('Error converting decrypted file to CSV: ', err)
-        return false
+        return ''
     }
 }
 
-function writeToXLSX(filePath: string, outputDir: string, wb: any) {
-    var data: string[][] = []
+function writeAnonCSVToXLSX(filePath: string, outputDir: string, wb: any) {
+    let data: string[][] = []
     fs.createReadStream(filePath)
         .pipe(parse({ delimiter: ',', from_line: 1 }))
         .on('data', function (row) {
@@ -37,9 +41,7 @@ function writeToXLSX(filePath: string, outputDir: string, wb: any) {
             console.log(error.message)
         })
         .on('end', function () {
-            console.log('finished')
-            var wb = new xl.Workbook()
-            var ws = wb.addWorksheet(data[0][0])
+            let ws = wb.addWorksheet(data[0][0])
 
             for (let x = 0; x < data.length; x++) {
                 for (let y = 0; y < data[x].length; y++) {
@@ -51,4 +53,21 @@ function writeToXLSX(filePath: string, outputDir: string, wb: any) {
         })
 }
 
-export default { writeToCSV, writeToXLSX }
+function generateXLSX(filePath: string, files: string[], outputDir: string) {
+    try {
+        const wb = new xl.Workbook()
+        for (const file of files) {
+            const fileExtension = path.extname(file)
+            if (fileExtension == '.csv') {
+                console.log('Writing file: ', file)
+                writeAnonCSVToXLSX(filePath + file, outputDir, wb)
+            } else {
+            }
+        }
+    } catch (err) {
+        console.log('Error: ', err)
+        return
+    }
+}
+
+export default { writeToCSV, generateXLSX }
