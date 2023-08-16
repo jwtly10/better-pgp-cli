@@ -1,11 +1,11 @@
 import { Command } from 'commander'
+const xl = require('excel4node')
 import figlet from 'figlet'
 import fs from 'fs'
 import path from 'path'
 import promptly from 'promptly'
-import { parse } from 'csv-parse'
 import pgp from './utils/pgp'
-const xl = require('excel4node')
+import csv from './utils/csv'
 
 const program = new Command()
 
@@ -14,24 +14,34 @@ console.log(figlet.textSync('Better PGP CLI'))
 program
     .version('0.0.1')
     .description(
-        'Better PGP CLI - A CLI app to bulk decrypt pgp encrypted files and format files in XLS. '
+        'Better PGP CLI - A CLI app to bulk decrypt pgp encrypted files and format files in XLS. \n' +
+            'Modes Explained: \n' +
+            'MR: \n' +
+            'To use this tool, you must create a folder containing preferably only csv.pgp ' +
+            'files. This tool will decrypt all pgp files, create decrypted CSVs ' +
+            'and format them in an excel.'
     )
     .option('-m, --mode <mode>', "Available Modes: 'mr' - (Monthly Reporting)")
     .option('-d, --dir <directory>', 'Path to directory containing files')
-    .option('-k, --key <filename>', 'Name of private key in dir')
+    .option('-k, --key <path/key>', 'Path to private key')
+    .option(
+        '-o, --output <directory>',
+        'Path to output directory, default is -d directory'
+    )
     .parse(process.argv)
 
 const options = program.opts()
 
 async function generateMonthlyReport(
     filePath: string,
-    key: string,
-    password: string
+    keyPath: string,
+    password: string,
+    outputDir: string = filePath
 ) {
-    // Iterate through path to find pgp files to process.
     console.log("Parsing directory: '", filePath, "'")
+
+    const files: string[] = await fs.promises.readdir(filePath)
     try {
-        const files: string[] = await fs.promises.readdir(filePath)
         if (files.length === 0) {
             console.log('No files found in path: ', filePath)
             return
@@ -40,46 +50,55 @@ async function generateMonthlyReport(
             return
         }
 
+        var processedFiles: number = 0
         files.forEach(async (file) => {
             const fileExtension = path.extname(file)
             if (fileExtension !== '.pgp') {
                 console.log('File extension is not .pgp, skipping file: ', file)
             } else {
                 console.log('Processing file: ', file)
-                // Decrypt file
-                // Write decrypted file to XLSX
-                await processFile(file, key, password)
+                processedFiles++
+                await processFile(file, filePath, keyPath, password, outputDir)
+            }
+        })
+        console.log('Processed ', processedFiles, ' file(s). \n')
+    } catch (err) {
+        console.log('Error: ', err)
+    }
+
+    try {
+        const wb = new xl.Workbook()
+        files.forEach(async (file) => {
+            const fileExtension = path.extname(file)
+            if (fileExtension == '.csv') {
+                console.log('Writing file: ', file)
+                csv.writeToXLSX(filePath + file, outputDir, wb)
+            } else {
             }
         })
     } catch (err) {
         console.log('Error: ', err)
+        return
     }
-    // If folder has too many records, return an error
-
-    // Else read through the files and process them
-    // 1. Decrypt the files -- throw error if decryption fails
-    // 2. Write the decrypted files to individual sheets in workbook
 }
 
-async function processFile(file: string, key: string, password: string) {
-    const decryptedFile = await pgp.decryptFile(file, key, password)
+async function processFile(
+    file: string,
+    filePath: string,
+    keyPath: string,
+    password: string,
+    outputDir: string
+) {
+    const decryptedFile = await pgp.decryptFile(
+        file,
+        filePath,
+        keyPath,
+        password
+    )
     // Write this decrypted file to csv
-    if (convertToCSV(decryptedFile, file)) {
-        console.log('Successfully converted decrypted file ', file, ' to CSV')
-    }
+    csv.writeToCSV(decryptedFile, file, outputDir)
 }
 
-function convertToCSV(decryptedFile: string, file: string): boolean {
-    // get the first item of the decrypted file, comma separated
-    const filename = decryptedFile.split(',')[0]
-    try {
-        const writableStream = fs.createWriteStream(filename + '.csv')
-        return writableStream.write(decryptedFile)
-    } catch (err) {
-        console.log('Error converting decrypted file to CSV: ', err)
-        return false
-    }
-}
 // async function testFlow(filePath: string) {
 //     fs.createReadStream(filePath)
 //         .pipe(parse({ delimiter: ',', from_line: 1 }))
@@ -128,4 +147,7 @@ if (options.mode === 'mr' && options.dir && options.key) {
         })
         await generateMonthlyReport(options.dir, options.key, password)
     })()
+} else {
+    console.log('Invalid arguments provided.')
+    program.help()
 }
