@@ -6,23 +6,36 @@ import { parse } from 'csv-parse'
 function writeToCSV(
     decryptedFile: string,
     file: string,
-    outputDir: string
+    outputDir: string,
+    fileName?: string
 ): string {
-    const filename = decryptedFile.split(',')[0]
+    const filename = fileName ? fileName : decryptedFile.split(',')[0]
     try {
+        if (filename.includes('csv')) {
+            const writableStream = fs.createWriteStream(outputDir + filename)
+            if (writableStream.write(decryptedFile)) {
+                console.log(
+                    'Successfully converted encrypted file ',
+                    file,
+                    ' to ',
+                    filename
+                )
+                return filename
+            }
+        }
+
         const writableStream = fs.createWriteStream(
             outputDir + filename + '.csv'
         )
         if (writableStream.write(decryptedFile)) {
             console.log(
-                'Successfully converted decrypted file ',
+                'Successfully converted encrypted file ',
                 file,
                 ' to ',
                 filename + '.csv'
             )
             return filename + '.csv'
         }
-
         return ''
     } catch (err) {
         console.log('Error converting decrypted file to CSV: ', err)

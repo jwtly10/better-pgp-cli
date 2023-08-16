@@ -51,4 +51,29 @@ async function generateMonthlyReport(
     return
 }
 
-export default { generateMonthlyReport }
+async function generateDecryptedFile(
+    filePath: string,
+    keyPath: string,
+    password: string,
+    outputDir: string = filePath
+) {
+    try {
+        if (fs.lstatSync(filePath).isFile()) {
+            const file = path.basename(filePath)
+            const filename = path.parse(filePath).name
+            if (!file.includes('csv')) {
+                console.log('File type is not CSV.')
+                return
+            }
+            console.log('Decrypting file: ', filePath)
+            const decrypted = await decryptFile(filePath, keyPath, password)
+            console.log('Decrypted file: ', filename)
+            csv.writeToCSV(decrypted, file, outputDir, filename)
+            return decrypted
+        }
+    } catch (err) {
+        console.log('Error: ', err)
+    }
+}
+
+export default { generateMonthlyReport, generateDecryptedFile }
