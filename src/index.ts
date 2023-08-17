@@ -6,7 +6,7 @@ import cli from './services/cliFunctions'
 
 const program = new Command()
 
-console.log(figlet.textSync('Better PGP CLI'))
+// console.log(figlet.textSync('Better PGP CLI'))
 
 program
     .version('0.0.1')

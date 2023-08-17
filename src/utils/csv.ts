@@ -9,32 +9,17 @@ function writeToCSV(
     outputDir: string,
     fileName?: string
 ): string {
-    const filename = fileName ? fileName : decryptedFile.split(',')[0]
+    const filename = fileName ? fileName : decryptedFile.split(',')[0] + 'csv'
     try {
-        if (filename.includes('csv')) {
-            const writableStream = fs.createWriteStream(outputDir + filename)
-            if (writableStream.write(decryptedFile)) {
-                console.log(
-                    'Successfully converted encrypted file ',
-                    file,
-                    ' to ',
-                    filename
-                )
-                return filename
-            }
-        }
-
-        const writableStream = fs.createWriteStream(
-            outputDir + filename + '.csv'
-        )
+        const writableStream = fs.createWriteStream(outputDir + filename)
         if (writableStream.write(decryptedFile)) {
             console.log(
                 'Successfully converted encrypted file ',
                 file,
                 ' to ',
-                filename + '.csv'
+                filename
             )
-            return filename + '.csv'
+            return filename
         }
         return ''
     } catch (err) {

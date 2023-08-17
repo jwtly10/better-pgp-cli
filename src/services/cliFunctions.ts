@@ -55,7 +55,7 @@ async function generateDecryptedFile(
     filePath: string,
     keyPath: string,
     password: string,
-    outputDir: string = filePath
+    outputDir?: string
 ) {
     try {
         if (fs.lstatSync(filePath).isFile()) {
@@ -68,7 +68,14 @@ async function generateDecryptedFile(
             console.log('Decrypting file: ', filePath)
             const decrypted = await decryptFile(filePath, keyPath, password)
             console.log('Decrypted file: ', filename)
-            csv.writeToCSV(decrypted, file, outputDir, filename)
+            outputDir = outputDir ? outputDir : filePath
+            console.log('Test: ', filename)
+            csv.writeToCSV(
+                decrypted,
+                file,
+                path.dirname(outputDir) + '/',
+                filename
+            )
             return decrypted
         }
     } catch (err) {
