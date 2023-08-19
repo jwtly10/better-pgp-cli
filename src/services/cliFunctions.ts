@@ -7,11 +7,19 @@ async function generateMonthlyReport(
     filePath: string,
     keyPath: string,
     password: string,
-    outputDir: string = filePath
+    outputDir?: string
 ) {
     console.log("Parsing directory: '", filePath, "'\n")
 
+    outputDir = outputDir ? outputDir : filePath
+
+    if (fs.lstatSync(path.join(filePath)).isFile()) {
+        console.log('Dir must be a directory, not a file.')
+        return
+    }
+
     var files = await fs.promises.readdir(filePath)
+
     try {
         if (files.length === 0) {
             console.log('No files found in path: ', filePath)
@@ -21,34 +29,39 @@ async function generateMonthlyReport(
 
         var processedFiles: number = 0
 
-        for (const file of files) {
-            const fileExtension = path.extname(file)
+        for (const fileIn of files) {
+            const fileExtension = path.extname(fileIn)
             if (fileExtension !== '.pgp') {
-                console.log('File extension is not .pgp, skipping file: ', file)
+                console.log(
+                    'File extension is not .pgp, skipping file: ',
+                    fileIn
+                )
                 continue
             }
 
-            console.log('Processing file: ', file)
-            processedFiles++
+            console.log('Processing file: ', fileIn)
             const decrypted = await decryptFile(
-                file,
-                filePath,
+                filePath + '/' + fileIn,
                 keyPath,
                 password
             )
 
-            csv.writeToCSV(decrypted, file, outputDir)
+            const res = csv.writeDataToCSV(decrypted, fileIn, outputDir)
+            if (res.err) {
+                console.log('Error converting file: ', res.err)
+            } else {
+                console.log('Generated CSV ', res.file, ' from ', fileIn)
+                processedFiles++
+            }
         }
 
         await fs.promises.readdir(filePath)
         files = fs.readdirSync(filePath)
-        console.log('Processed ', processedFiles, ' file(s). \n')
-        csv.generateXLSX(filePath, files, outputDir)
-        console.log('\nXLSX File generated')
+        console.log('Successfully processed: ', processedFiles, ' file(s). \n')
+        csv.generateXLSX(filePath, files, 'results', outputDir)
     } catch (err) {
         console.log('Error: ', err)
     }
-    return
 }
 
 async function generateDecryptedFile(
@@ -57,22 +70,24 @@ async function generateDecryptedFile(
     password: string,
     outputDir?: string
 ) {
+    outputDir = outputDir ? outputDir : filePath
     try {
         if (fs.lstatSync(filePath).isFile()) {
-            const file = path.basename(filePath)
+            const fileLoc = path.basename(filePath)
             const filename = path.parse(filePath).name
-            if (!file.includes('csv')) {
+
+            if (!fileLoc.includes('csv')) {
                 console.log('File type is not CSV.')
                 return
             }
+
             console.log('Decrypting file: ', filePath)
             const decrypted = await decryptFile(filePath, keyPath, password)
             console.log('Decrypted file: ', filename)
-            outputDir = outputDir ? outputDir : filePath
-            console.log('Test: ', filename)
-            csv.writeToCSV(
+
+            csv.writeDataToCSV(
                 decrypted,
-                file,
+                fileLoc,
                 path.dirname(outputDir) + '/',
                 filename
             )

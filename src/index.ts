@@ -1,77 +1,60 @@
+#!/usr/bin/env node
 import { Command } from 'commander'
 const xl = require('excel4node')
 import figlet from 'figlet'
 import promptly from 'promptly'
 import cli from './services/cliFunctions'
+import validate from './utils/validateInput'
 
 const program = new Command()
 
-// console.log(figlet.textSync('Better PGP CLI'))
+console.log(figlet.textSync('PGP my CSV'))
 
 program
-    .version('0.0.1')
+    .version('0.0.2')
     .description(
-        'Better PGP CLI - A CLI app to bulk decrypt pgp encrypted files and format files in XLS.'
+        'PGP my CSV - A CLI app to decrypt CSV files using PGP and perform automated tasks.'
     )
-    .option('-m, --mode <mode>', 'mf, df, dd')
-    .option('-d, --dir <path>', 'Path to directory/file to decrypt')
-    .option('-k, --key <path/key>', 'Path to private key')
+    .option('-m, --mode <mode>', 'mr, df, dd')
+    .option(
+        '-d, --dir <path>',
+        'Path to directory to decrypt files. If none chosen will use current dir.'
+    )
+    .option('-f, --file <path>', 'Path to file to decrypt.')
+    .option('-k, --key <path>', 'Path to private key')
     .option('-o, --output <path>', 'Path to output directory')
     .parse(process.argv)
 
 const options = program.opts()
 
 // Handle arguments
-if (process.argv.length === 0) {
-    console.log('No arguments provided.')
+if (!validate.args(options.mode, options.dir, options.key)) {
     program.help()
 }
 
-switch (options.mode) {
-    case 'df':
-        if (options.dir && options.key) {
-            ;(async () => {
-                const password = await promptly.password(
-                    'Passphrase for key: ',
-                    {
-                        replace: '*',
-                    }
-                )
-                await cli.generateDecryptedFile(
-                    options.dir,
-                    options.key,
-                    password
-                )
-            })()
-        } else {
-            console.log('Invalid arguments provided.')
-            program.help()
-        }
-        break
-    case 'mr':
-        if (options.mode === 'mr' && options.dir && options.key) {
-            console.log('Generating Monthly Reporting XLSX')
-            ;(async () => {
-                const password = await promptly.password(
-                    'Passphrase for key: ',
-                    {
-                        replace: '*',
-                    }
-                )
-                await cli.generateMonthlyReport(
-                    options.dir,
-                    options.key,
-                    password,
-                    options.output
-                )
-            })()
-        } else {
-            console.log('Invalid arguments provided.')
-            program.help()
-        }
-        break
-    default:
-        console.log('No mode specified.')
-        program.help()
-        break
-}
+var password = ''
+
+;(async () => {
+    password = await promptly.password('Passphrase for key (if required): ', {
+        replace: '*',
+    })
+
+    switch (options.mode) {
+        case 'df':
+            await cli.generateDecryptedFile(
+                options.dir ? options.dir : process.cwd() + '/',
+                options.key,
+                password,
+                options.output
+            )
+            break
+        case 'mr':
+            await cli.generateMonthlyReport(
+                options.dir ? options.dir : process.cwd() + '/',
+                options.key,
+                password,
+                options.output
+            )
+            break
+    }
+})()

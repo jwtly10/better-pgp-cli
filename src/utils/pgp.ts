@@ -4,11 +4,10 @@ import fs from 'fs'
 export default async function decryptFile(
     filePath: string,
     keyPath: string,
-    password: string,
-    file: string = ''
+    password: string
 ): Promise<string> {
     try {
-        const encryptedFile = fs.readFileSync(filePath + file)
+        const encryptedFile = fs.readFileSync(filePath)
         const privkey = fs.readFileSync(keyPath)
         const privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0]
         await privKeyObj.decrypt(password)
