@@ -8,13 +8,14 @@ import validate from './utils/validateInput'
 
 const program = new Command()
 
-console.log(figlet.textSync('PGP Job CLI'))
+console.log(figlet.textSync('Better PGP Cli'))
 
 program
     .version('1.0.2')
-    .description(
-        'PGP Job CLI - A CLI app to decrypt CSV files using PGP and perform automated tasks.'
+    .usage(
+        '-m df -f ~/Desktop/PrivateData.csv.pgp -k ~/private/keys/privatekey.asc -o ~/OneDrive/DecryptedFiles/'
     )
+    .description('CLI application to perform PGP encrypted CSV manipulation.')
     .option(
         '-m, --mode <mode>',
         'mr - Monthly Report Job, df - Decrypt CSV File, dd - Decrypt CSV in Directory'
