@@ -60,7 +60,7 @@ async function generateMonthlyReport(
         console.log('Successfully processed: ', processedFiles, ' file(s). \n')
         csv.generateXLSX(filePath, files, 'results', outputDir)
     } catch (err) {
-        console.log('Error: ', err)
+        console.log(err)
     }
 }
 
@@ -83,6 +83,11 @@ async function generateDecryptedFile(
 
             console.log('Decrypting file: ', filePath)
             const decrypted = await decryptFile(filePath, keyPath, password)
+            if (!decrypted) {
+                console.log('Error decrypting file')
+                return
+            }
+
             console.log('Decrypted file: ', filename)
 
             csv.writeDataToCSV(
@@ -91,7 +96,6 @@ async function generateDecryptedFile(
                 path.dirname(outputDir) + '/',
                 filename
             )
-            return decrypted
         }
     } catch (err) {
         console.log('Error: ', err)

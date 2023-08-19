@@ -8,19 +8,23 @@ import validate from './utils/validateInput'
 
 const program = new Command()
 
-console.log(figlet.textSync('PGP my CSV'))
+console.log(figlet.textSync('PGP Job CLI'))
 
 program
-    .version('0.0.2')
+    .version('1.0.2')
     .description(
-        'PGP my CSV - A CLI app to decrypt CSV files using PGP and perform automated tasks.'
+        'PGP Job CLI - A CLI app to decrypt CSV files using PGP and perform automated tasks.'
     )
-    .option('-m, --mode <mode>', 'mr, df, dd')
+    .option(
+        '-m, --mode <mode>',
+        'mr - Monthly Report Job, df - Decrypt CSV File, dd - Decrypt CSV in Directory'
+    )
     .option(
         '-d, --dir <path>',
         'Path to directory to decrypt files. If none chosen will use current dir.'
     )
     .option('-f, --file <path>', 'Path to file to decrypt.')
+    .option('-r, --name <path>', 'Rename output file')
     .option('-k, --key <path>', 'Path to private key')
     .option('-o, --output <path>', 'Path to output directory')
     .parse(process.argv)

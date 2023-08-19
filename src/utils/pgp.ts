@@ -5,7 +5,7 @@ export default async function decryptFile(
     filePath: string,
     keyPath: string,
     password: string
-): Promise<string> {
+) {
     try {
         const encryptedFile = fs.readFileSync(filePath)
         const privkey = fs.readFileSync(keyPath)
@@ -18,7 +18,6 @@ export default async function decryptFile(
         })
         return decrypted
     } catch (err) {
-        console.log('Error: ', err)
-        return 'Error'
+        console.log(err)
     }
 }
