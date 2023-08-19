@@ -1,4 +1,4 @@
-function args(mode: string, dir: string, key: string): boolean {
+function args(mode: string, dir: string, file: string, key: string): boolean {
     if (!mode && !dir && !key) {
         console.log('No arguments provided.')
         return false
@@ -9,14 +9,18 @@ function args(mode: string, dir: string, key: string): boolean {
         return false
     }
 
-    if (!dir) {
-        console.log('Using Current Directory: ', process.cwd())
-        return true
-    }
-
     if (!key) {
         console.log('No private key provided.')
         return false
+    }
+
+    if (mode !== 'mr' && !file) {
+        console.log('No file provided.')
+        return false
+    }
+
+    if (!dir) {
+        console.log('Using Current Directory: ', process.cwd())
     }
 
     return true

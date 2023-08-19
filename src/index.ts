@@ -28,7 +28,7 @@ program
 const options = program.opts()
 
 // Handle arguments
-if (!validate.args(options.mode, options.dir, options.key)) {
+if (!validate.args(options.mode, options.dir, options.file, options.key)) {
     program.help()
 }
 
