@@ -1,4 +1,11 @@
-function args(mode: string, dir: string, file: string, key: string): boolean {
+import path from 'path'
+function args(
+    mode: string,
+    dir: string,
+    file: string,
+    key: string,
+    outputDir: string
+): boolean {
     if (!mode && !dir && !key) {
         console.log('No arguments provided.')
         return false
@@ -14,16 +21,12 @@ function args(mode: string, dir: string, file: string, key: string): boolean {
         return false
     }
 
-    if (mode !== 'dd' && !file) {
+    if (outputDir) {
+        console.log('Output directory: ', path.resolve(outputDir))
+    }
+    if (mode == 'dd' && !file) {
         console.log('No file provided.')
         return false
-    }
-
-    if (!dir) {
-        console.log(
-            'Using Current Directory if no path specified: ',
-            process.cwd()
-        )
     }
 
     return true

@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 const xl = require('excel4node')
 import { parse } from 'csv-parse'
+import handleError from './errorHandler'
 
 type writeResponse = {
     err?: string
@@ -20,13 +21,22 @@ function writeDataToCSV(
         : decryptedData.split(',')[0] + '.csv'
 
     try {
-        const writableStream = fs.createWriteStream(outputDir + fileName)
+        const writableStream = fs.createWriteStream(
+            path.join(outputDir, fileName)
+        )
         if (writableStream.write(decryptedData)) {
+            // console.log(
+            //     'Successfully converted encrypted file ',
+            //     origFileName,
+            //     ' to ',
+            //     fileName
+            // )
             return { file: fileName }
         }
         return { err: 'Error writing to file' }
     } catch (err: any) {
         // console.log('Error converting decrypted file to CSV: ', err)
+        handleError(err)
         return { err: err.message }
     }
 }
@@ -66,11 +76,13 @@ function writeCSVToXLSX(
                         }
                     }
 
-                    workBook.write(outputDir + outputFileName + '.xlsx')
+                    workBook.write(
+                        path.join(outputDir, outputFileName + '.xlsx')
+                    )
                 })
         })
-    } catch (err) {
-        console.log('Error writing CSV to XLSX: ', err)
+    } catch (err: any) {
+        handleError(err)
     }
 }
 
@@ -80,17 +92,26 @@ function generateXLSX(
     outputFile: string,
     outputDir: string
 ): writeResponse {
+    if (fileNamesIn.length == 0) {
+        console.log('No csv files found in path: ', filePath)
+    }
     try {
         const wb = new xl.Workbook()
         for (const fileIn of fileNamesIn) {
             const fileExtension = path.extname(fileIn)
             if (fileExtension == '.csv') {
-                writeCSVToXLSX(filePath + fileIn, outputDir, outputFile, wb)
+                writeCSVToXLSX(
+                    path.join(filePath, fileIn),
+                    outputDir,
+                    outputFile,
+                    wb
+                )
             }
         }
 
         return { file: outputFile + '.xlsx' }
     } catch (err: any) {
+        handleError(err)
         return { err: err.message }
     }
 }

@@ -1,5 +1,6 @@
 import * as openpgp from 'openpgp'
 import fs from 'fs'
+import handleError from './errorHandler'
 
 export default async function decryptFile(
     filePath: string,
@@ -17,7 +18,7 @@ export default async function decryptFile(
             privateKeys: [privKeyObj],
         })
         return decrypted
-    } catch (err) {
-        console.log(err)
+    } catch (err: any) {
+        handleError(err)
     }
 }

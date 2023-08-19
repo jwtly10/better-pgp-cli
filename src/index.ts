@@ -32,7 +32,15 @@ program
 const options = program.opts()
 
 // Handle arguments
-if (!validate.args(options.mode, options.dir, options.file, options.key)) {
+if (
+    !validate.args(
+        options.mode,
+        options.dir,
+        options.file,
+        options.key,
+        options.output
+    )
+) {
     program.help()
 }
 
@@ -49,8 +57,8 @@ var password = ''
                 options.file,
                 options.key,
                 password,
-                options.output,
-                options.name
+                options.name,
+                options.output
             )
             break
         case 'mr':
