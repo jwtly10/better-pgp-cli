@@ -22,12 +22,6 @@ function writeDataToCSV(
     try {
         const writableStream = fs.createWriteStream(outputDir + fileName)
         if (writableStream.write(decryptedData)) {
-            // console.log(
-            //     'Successfully converted encrypted file ',
-            //     origFileName,
-            //     ' to ',
-            //     fileName
-            // )
             return { file: fileName }
         }
         return { err: 'Error writing to file' }

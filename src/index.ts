@@ -23,7 +23,7 @@ program
         '-d, --dir <path>',
         'Path to directory to decrypt files. If none chosen will use current dir.'
     )
-    .option('-f, --file <path>', 'Path to file to decrypt.')
+    .option('-f, --file <path>', 'Path to file to decrypt')
     .option('-r, --name <path>', 'Rename output file')
     .option('-k, --key <path>', 'Path to private key')
     .option('-o, --output <path>', 'Path to output directory')
@@ -46,10 +46,11 @@ var password = ''
     switch (options.mode) {
         case 'df':
             await cli.generateDecryptedFile(
-                options.dir ? options.dir : process.cwd() + '/',
+                options.file,
                 options.key,
                 password,
-                options.output
+                options.output,
+                options.name
             )
             break
         case 'mr':

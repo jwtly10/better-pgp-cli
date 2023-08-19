@@ -68,34 +68,44 @@ async function generateDecryptedFile(
     filePath: string,
     keyPath: string,
     password: string,
+    outputFileName?: string,
     outputDir?: string
 ) {
-    outputDir = outputDir ? outputDir : filePath
+    outputDir = outputDir
+        ? outputDir
+        : path.dirname(path.resolve(filePath)) + '/'
+
+    outputFileName = outputFileName
+        ? outputFileName
+        : path.parse(filePath).name.includes('.csv')
+        ? path.parse(filePath).name
+        : path.parse(filePath).name + '.csv'
+
     try {
         if (fs.lstatSync(filePath).isFile()) {
-            const fileLoc = path.basename(filePath)
-            const filename = path.parse(filePath).name
-
-            if (!fileLoc.includes('csv')) {
-                console.log('File type is not CSV.')
-                return
-            }
-
-            console.log('Decrypting file: ', filePath)
-            const decrypted = await decryptFile(filePath, keyPath, password)
-            if (!decrypted) {
+            const fullFileName = path.basename(filePath)
+            const decryptedData = await decryptFile(filePath, keyPath, password)
+            if (!decryptedData) {
                 console.log('Error decrypting file')
                 return
             }
 
-            console.log('Decrypted file: ', filename)
+            console.log('Decrypted file: ', fullFileName)
 
-            csv.writeDataToCSV(
-                decrypted,
-                fileLoc,
-                path.dirname(outputDir) + '/',
-                filename
+            const res = csv.writeDataToCSV(
+                decryptedData,
+                fullFileName,
+                outputDir,
+                outputFileName
             )
+
+            if (res.err) {
+                console.log('Error converting file: ', res.err)
+            }
+
+            console.log('Generated CSV ', res.file, ' from ', fullFileName)
+        } else {
+            console.log('File not found: ', filePath)
         }
     } catch (err) {
         console.log('Error: ', err)

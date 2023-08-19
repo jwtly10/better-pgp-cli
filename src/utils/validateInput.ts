@@ -14,13 +14,16 @@ function args(mode: string, dir: string, file: string, key: string): boolean {
         return false
     }
 
-    if (mode !== 'mr' && !file) {
+    if (mode !== 'dd' && !file) {
         console.log('No file provided.')
         return false
     }
 
     if (!dir) {
-        console.log('Using Current Directory: ', process.cwd())
+        console.log(
+            'Using Current Directory if no path specified: ',
+            process.cwd()
+        )
     }
 
     return true
